@@ -1,22 +1,51 @@
 "use client"
 
+import axios from "axios";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [user, setUser] = useState({
     email: "",
     password: ""
   });
 
+  const [buttonDisabled, setButtonDisabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const onLogin = async () => {
-    // Login logic here
-  };
+    try {
+      setLoading(true);
+      await axios.post("/api/users/login", user);
+      toast.success("Login Success");
+      router.push("/profile");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unknown error occurred");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };  
+
+  useEffect(() => {
+    if(user.email.length > 0 && user.password.length > 0) {
+      setButtonDisabled(false);
+    } else {
+      setButtonDisabled(true);
+    }
+  }, [user])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">{loading ? "Processing" : "Login"}</h1>
         <hr className="mb-4" />
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
           Email
@@ -42,6 +71,7 @@ export default function LoginPage() {
         />
         <button
           onClick={onLogin}
+          disabled={buttonDisabled}
           className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-200"
         >
           Login Here

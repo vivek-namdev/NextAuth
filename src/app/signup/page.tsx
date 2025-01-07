@@ -1,23 +1,51 @@
-"use client"
+"use client";
 
+import axios from "axios";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation"; // Correct import for App Router
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function SignupPage() {
+  const router = useRouter();
+
   const [user, setUser] = useState({
     username: "",
     email: "",
-    password: ""
+    password: "",
   });
 
+  const [buttonDisabled, setButtonDisabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const onSignup = async () => {
-    // Signup logic here
+    try {
+      setLoading(true);
+      await axios.post("/api/users/signup", user);
+      router.push("/login");
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        toast.error(error.response.data.message || "Signup failed");
+      } else {
+        toast.error("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    if (user.email.length > 0 && user.password.length > 0 && user.username.length > 0) {
+      setButtonDisabled(false);
+    } else {
+      setButtonDisabled(true);
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Signup</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">{loading ? "Processing" : "Signup"}</h1>
         <hr className="mb-4" />
         <label htmlFor="username" className="block text-sm font-medium text-gray-700">
           Username
@@ -54,9 +82,12 @@ export default function SignupPage() {
         />
         <button
           onClick={onSignup}
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-200"
+          disabled={buttonDisabled}
+          className={`w-full bg-blue-500 text-white py-2 rounded ${
+            buttonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"
+          } transition duration-200`}
         >
-          Signup Here
+          {loading ? "Processing..." : "Signup"}
         </button>
         <p className="mt-4 text-sm text-center text-gray-600">
           Already have an account?{" "}
